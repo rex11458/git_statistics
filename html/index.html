@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <meta charset="utf-8">
     <title>代码统计</title>
@@ -8,56 +9,48 @@
 
     <script src="https://unpkg.com/babel-standalone@6.15.0/babel.min.js" crossorigin></script>
     <script src="https://unpkg.com/react@17/umd/react.production.min.js" crossorigin></script>
-    <script src="https://unpkg.com/react-dom@17/umd/react-dom.production.min.js" crossorigin></script>  
-    <script src="https://unpkg.com/react-dom@17/umd/react-dom.production.min.js" crossorigin></script>  
+    <script src="https://unpkg.com/react-dom@17/umd/react-dom.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@17/umd/react-dom.production.min.js" crossorigin></script>
 
-    <script src=" https://unpkg.com/antd@4.16.0/dist/antd.min.js" crossorigin></script>  
+    <script src=" https://unpkg.com/antd@4.16.0/dist/antd.min.js" crossorigin></script>
 
     <script src="https://unpkg.com/bizcharts@4.1.11/umd/BizCharts.min.js"></script>
     <script src="data.js"></script>
     <style type="text/css">
-        body {padding: 16px;background-color: #F2F2F2;}
-
-        #root{
-            background-color: #FFFFFF;
-            padding:0;
+        body {
+            padding: 16px;
+            background-color: #F2F2F2;
         }
-        .separtor{
+
+        #root {
+            background-color: #FFFFFF;
+            padding: 0;
+        }
+
+        .separtor {
             height: 20px;
         }
 
-        .item{
+        .item {
             padding: 16px;
         }
 
-        .divider{
+        .divider {
             background-color: #F2F2F2;
             height: 16px;
             margin: 0 -16px;
         }
-        </style>
+    </style>
 </head>
+
 <body>
     <div id="root"></div>
     <script type="text/babel">
         'use strict';
-         
-        const StatsSingle = ({data})=>{
-            var {project_name,repo_url,stats_time,total_files,stats_start_date,stats_end_date,total_commits, authors_commits,authors=[]} = data
-            const dataSource =
-             authors_commits.map((item,index)=>{
-                const {commits=[],first_commit_date,last_commit_date,...rest} = item
-                return {
-                    key:index,
-                    commits:commits.length,
-                    first_commit_date:first_commit_date || '-',
-                    last_commit_date:last_commit_date || '-',
-                    ...rest
-                }
-            })
+        const { Table, Descriptions, Divider } = antd
 
-            const {Table, Descriptions,Divider} = antd
-            const columns = [
+        var collectData = []
+        const columns = [
             {
                 title: 'Author',
                 dataIndex: 'git_name',
@@ -67,69 +60,100 @@
                 title: 'Commits',
                 dataIndex: 'commits',
                 key: 'commits',
-                align:"center"
+                align: "center"
             },
             {
                 title: '+lines',
                 dataIndex: 'total_inserted',
                 key: 'total_inserted',
-                align:"center"
+                align: "center"
 
-            },       
+            },
             {
                 title: '-lines',
                 dataIndex: 'total_deleted',
                 key: 'total_deleted',
-                align:"center"
-            },  {
+                align: "center"
+            }, {
                 title: 'File changes',
                 dataIndex: 'total_files',
                 key: 'total_files',
-                align:"center"
-                
+                align: "center"
+
             }, {
                 title: 'First commit',
                 dataIndex: 'first_commit_date',
                 key: 'first_commit_date',
-                align:"center"
+                align: "center"
 
             },
             {
                 title: 'Last commit',
                 dataIndex: 'last_commit_date',
                 key: 'last_commit_date',
-                align:"center"
+                align: "center"
 
             },
             {
                 title: 'Active days',
                 dataIndex: 'active_days',
                 key: 'active_days',
-                align:"center"
+                align: "center"
 
-            },       
+            },
             {
                 title: '总BUG数',
                 dataIndex: 'total_bug_count',
                 key: 'total_bug_count',
-            },  {
+            }, {
                 title: '千行BUG数',
                 dataIndex: 'thousands_bug_count',
                 key: 'thousands_bug_count',
-                align:"center"
+                align: "center"
 
             }
-            ];
+        ];
 
-            const {G2,  Chart,  Tooltip,  Interval } = BizCharts;
+        const StatsSingle = ({ data }) => {
+            var { project_name, repo_url, stats_time, total_files, stats_start_date, stats_end_date, total_commits, authors_commits, authors = [] } = data
+            const dataSource =
+                authors_commits.map((item, index) => {
+                    const { commits = [], first_commit_date, last_commit_date, ...rest } = item
+
+                    let retItem = {
+                        key: index,
+                        commits: commits.length,
+                        first_commit_date: first_commit_date || '-',
+                        last_commit_date: last_commit_date || '-',
+                        ...rest
+                    }
+
+                    let collectItem = collectData.find(subItem => subItem.git_name === retItem.git_name)
+                    if (!!collectItem) {
+                            collectItem.active_days += retItem.active_days
+                            collectItem.total_inserted += retItem.total_inserted
+                            collectItem.total_files += retItem.total_files
+                            collectItem.total_deleted += retItem.total_deleted
+                            collectItem.total_bug_count += retItem.total_bug_count
+                            collectItem.commits += retItem.thousands_bug_count
+                            collectItem.commits += retItem.commits
+                    } else {
+                        collectData.push(JSON.parse(JSON.stringify(retItem)))
+                    }
+
+                    return retItem
+                })
+
+
+            const { G2, Chart, Tooltip, Interval } = BizCharts;
 
             var chart_data = []
-            
-            for(let i = 0; i < authors_commits.length;i++){
-                const {git_name,total_inserted,total_deleted,commits=[]} = authors_commits[i]
-                var item1 = {name:'commits', author:git_name,value:commits.length}
-                var item2 = {name:'+lines', author:git_name,value:total_inserted}
-                var item3 = {name:'-lines', author:git_name,value:total_deleted}
+
+            for (let i = 0; i < authors_commits.length; i++) {
+                const { git_name, total_inserted, total_deleted, commits = [] } = authors_commits[i]
+                var item1 = { name: 'commits', author: git_name, value: commits.length }
+                var item2 = { name: '+lines', author: git_name, value: total_inserted }
+                var item3 = { name: '-lines', author: git_name, value: total_deleted }
 
                 chart_data.push(item1)
                 chart_data.push(item2)
@@ -137,18 +161,18 @@
             }
 
             var chart_data2 = []
-            
-            for(let i = 0; i < authors_commits.length;i++){
-                const {git_name,total_bug_count,thousands_bug_count} = authors_commits[i]
-                var item1 = {name:'总BUG数', author:git_name,value:total_bug_count}
-                var item2 = {name:'千行BUG数', author:git_name,value:thousands_bug_count}
+
+            for (let i = 0; i < authors_commits.length; i++) {
+                const { git_name, total_bug_count, thousands_bug_count } = authors_commits[i]
+                var item1 = { name: '总BUG数', author: git_name, value: total_bug_count }
+                var item2 = { name: '千行BUG数', author: git_name, value: thousands_bug_count }
                 chart_data2.push(item1)
                 chart_data2.push(item2)
             }
 
 
             return <div class="item">
-                <Descriptions  title={project_name}>
+                <Descriptions title={project_name}>
                     <Descriptions.Item label="Git地址"><a href={repo_url} target="_blank">{repo_url}</a></Descriptions.Item>
                     <Descriptions.Item label="统计日期">{stats_time}</Descriptions.Item>
                     <Descriptions.Item label="统计周期">{stats_start_date || '-'} ~ {stats_end_date || "-"}</Descriptions.Item>
@@ -156,52 +180,64 @@
                     <Descriptions.Item label="开发人数">{authors.length || '-'}</Descriptions.Item>
                     <Descriptions.Item label="代码行数"></Descriptions.Item>
                     <Descriptions.Item label="提交次数">{total_commits || '-'}</Descriptions.Item>
-                  </Descriptions> 
+                </Descriptions>
                 <Table bordered pagination={false} dataSource={dataSource} columns={columns} />
-                <div class="separtor"/>
+                <div class="separtor" />
                 <Chart height={400} padding="auto" data={chart_data} autoFit>
                     <Interval
-                      adjust={[
-                       {
-                          type: 'stack'
-                        },
-                      ]}
-                      color="name"
-                      position="author*value"
+                        adjust={[
+                            {
+                                type: 'stack'
+                            },
+                        ]}
+                        color="name"
+                        position="author*value"
                     />
                     <Tooltip shared />
-                  </Chart>
-                  <div class="separtor"/>
-                  <Chart height={400} padding="auto" data={chart_data2} autoFit>
+                </Chart>
+                <div class="separtor" />
+                <Chart height={400} padding="auto" data={chart_data2} autoFit>
                     <Interval
-                      adjust={[
-                       {
-                          type: 'dodge',
-                          marginRatio: 0,
-                        },
-                      ]}
-                      color="name"
-                      position="author*value"
+                        adjust={[
+                            {
+                                type: 'dodge',
+                                marginRatio: 0,
+                            },
+                        ]}
+                        color="name"
+                        position="author*value"
                     />
                     <Tooltip shared />
-                  </Chart>
-                <div class="divider"/>
+                </Chart>
+                <div class="divider" />
             </div>
         }
 
 
-        const StatsComponent = (props)=>{
-            const {data} = props
+        const StatsComponent = (props) => {
+            const { data } = props
 
-           return data.map(item=>{
-                return <StatsSingle data={item} />
-            })
+
+            return <div>
+                {
+                    data.map(item => {
+                        return <StatsSingle data={item} />
+                    })
+                }
+                <div class="item">
+                    <Descriptions title={"汇总"}>
+                        <Descriptions.Item label="项目总数"><a target="_blank">{data.length}</a></Descriptions.Item>
+                    </Descriptions>
+                    <Table bordered pagination={false} dataSource={collectData} columns={columns} />
+                </div>
+            </div>
         }
-    
+
 
         const root = document.querySelector('#root');
         ReactDOM.render(<StatsComponent data={data} />, root);
 
     </script>
 </body>
+
 </html>
